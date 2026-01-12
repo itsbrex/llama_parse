@@ -108,20 +108,19 @@ async function pollForJobCompletion({
     }
     const response =
       await getClassifyJobApiV1ClassifierJobsClassifyJobIdGet(jobOptions);
-    if (!response.response.ok) {
-      numIterations++;
-    }
     if (typeof response.data != "undefined") {
       status = response.data.status as StatusEnum;
       if (status == StatusEnum.CANCELLED || status == StatusEnum.ERROR) {
-        throw new Error("There was an error during the classification job.");
-      } else if (status == StatusEnum.SUCCESS) {
+        throw new Error("There was an error extracting data from your file.");
+      } else if (
+        status == StatusEnum.SUCCESS ||
+        status == StatusEnum.PARTIAL_SUCCESS
+      ) {
         return true;
-      } else {
-        numIterations++;
-        await sleep(interval * 1000);
       }
     }
+    numIterations++;
+    await sleep(interval * 1000);
   }
 }
 
@@ -169,7 +168,7 @@ async function getJobResult({
       retries++;
       await sleep(retryInterval * 1000);
     }
-    if (typeof response.data != "undefined") {
+    if (response.response.ok && typeof response.data != "undefined") {
       return response.data as ClassifyJobResults;
     } else {
       throw new Error(

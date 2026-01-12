@@ -296,20 +296,16 @@ async function pollForJobCompletion(
       return false;
     }
     const response = await getJobApiV1ExtractionJobsJobIdGet(jobOptions);
-    if (!response.response.ok) {
-      numIterations++;
-    }
     if (typeof response.data != "undefined") {
       status = response.data.status as StatusEnum;
       if (status == StatusEnum.CANCELLED || status == StatusEnum.ERROR) {
         throw new Error("There was an error extracting data from your file.");
       } else if (status == StatusEnum.SUCCESS) {
         return true;
-      } else {
-        numIterations++;
-        await sleep(interval * 1000);
       }
     }
+    numIterations++;
+    await sleep(interval * 1000);
   }
 }
 
@@ -350,7 +346,7 @@ async function getJobResult(
       retries++;
       await sleep(retryInterval * 1000);
     }
-    if (typeof response.data != "undefined") {
+    if (response.response.ok && typeof response.data != "undefined") {
       return {
         data: response.data.data,
         extractionMetadata: response.data.extraction_metadata,
